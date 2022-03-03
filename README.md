@@ -5,6 +5,7 @@ El trabajo consiste en mejorar el juego recreativo de air hockey dando a elegir 
 ## Integrantes del equipo
 
 Almudena Pérez Nieto @almuperezzz
+
 Patricia Plaza Ramos @PatriciaPlazaRamos
 
 ## Objetivos del trabajo
