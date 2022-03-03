@@ -10,4 +10,4 @@ Patricia Plaza Ramos @PatriciaPlazaRamos
 
 ## Objetivos del trabajo
 
-[Lista de los objetivos que se persiguen con el trabajo propuesto.]
+El objetivo del trabajo es crear una maqueta de lo que sería una máquina de recreativos de air hockey. Con los conocimientos aprendidos en clase de informática crearemos un programa que permita a los jugadores crear una partida y ver sus puntuaciones.
