@@ -1,0 +1,128 @@
+// Visual Micro is in vMicro>General>Tutorial Mode
+// 
+/*
+    Name:       ProyectoProgra2022.ino
+    Created:	06/04/2022 14:18:22
+    Author:     LAPTOP-9L35Q17M\almup
+*/
+
+const int LEDPin = 13;        // pin para el LED
+const int PIRPin = 2;         // pin de entrada (for PIR sensor)
+
+int pirState = LOW;           // de inicio no hay movimiento
+int val = 0;                  // estado del pin
+
+const int marcador = 1;
+const int marcador2 = 0;     // El n�mero de pin del pulsador
+const int marcador3 = A0;    //El n�mero de pin del pulsador
+const int marcador4 = A1;    // El n�mero de pin del pulsador
+int buttonState = 0;
+int buttonState2 = 0;
+int buttonState3 = 0;
+int buttonState4 = 0;
+int millares, centenas, decenas, unidades;
+int puntos, puntos2;
+int display[10] = { 0x3f, 0x06, 0x5B, 0x4f, 0x66, 0x6D, 0x7D, 0x07, 0x7f, 0x6f };
+const int z = 9, z1 = 10, z2 = 11, z3 = 12;
+byte l = 2;
+byte m = 3;
+byte n = 4;
+byte o = 5;
+byte p = 6;
+byte q = 7;
+byte r = 8;
+void puerto(int bits, int ini, int fin) {
+    for (int i = ini;i <= fin;i++)
+    {
+        digitalWrite(i, bitRead(bits, i - ini));
+    }
+}
+
+
+void setup()
+{
+    pinMode(LEDPin, OUTPUT);
+    pinMode(PIRPin, INPUT);
+    Serial.begin(9600);
+}
+
+void loop()
+{
+  while (Serial.available() > 0){
+    val = digitalRead(PIRPin);
+    if (val == HIGH)   //si est� activado
+    {
+        digitalWrite(LEDPin, HIGH);  //LED ON
+        if (pirState == LOW)  //si previamente estaba apagado
+        {
+            Serial.println("Sensor activado");
+            pirState = HIGH;
+        }
+    }
+    else   //si esta desactivado
+    {
+        digitalWrite(LEDPin, LOW); // LED OFF
+        if (pirState == HIGH)  //si previamente estaba encendido
+        {
+            Serial.println("Sensor parado");
+            pirState = LOW;
+        }
+    }
+}
+}
+
+void setup() {
+  
+    for (int i = l;i <= r;i++) {
+        pinMode(i, OUTPUT);
+    }
+    pinMode(z, OUTPUT);
+    pinMode(z1, OUTPUT);
+    pinMode(z2, OUTPUT);
+    pinMode(z3, OUTPUT);
+    pinMode(marcador, INPUT);
+    pinMode(marcador2, INPUT);
+    pinMode(marcador3, INPUT);
+    pinMode(marcador4, INPUT);
+}
+
+void loop() {
+    while (Serial.available() > 0){
+    buttonState = digitalRead(marcador);
+    buttonState2 = digitalRead(marcador2);
+    buttonState3 = digitalRead(marcador3);
+    buttonState4 = digitalRead(marcador4);
+    if (buttonState == HIGH)
+    {
+        puntos = puntos + 100;
+        delay(1000);
+    }
+    if (buttonState2 == HIGH)
+    {
+        puntos = puntos + 1;
+        delay(1000);
+
+    }
+    if (buttonState3 == HIGH)
+    {
+        if (puntos >= 100) {
+            puntos = puntos - 100;
+        }
+        delay(1000);
+    }
+    if (buttonState4 == HIGH)
+    {
+        puntos = puntos - 1;
+        delay(1000);
+    }
+    if (puntos <= 0) { puntos = 0; }
+    millares = puntos / 1000;
+    centenas = ((puntos - (millares * 1000)) / 100);
+    decenas = ((puntos - (millares * 1000 + centenas * 100)) / 10);
+    unidades = (puntos - (millares * 1000 + centenas * 100 + decenas * 10));
+    puerto(display[unidades], l, r);digitalWrite(z, LOW); delay(1); digitalWrite(z, HIGH);
+    puerto(display[decenas], l, r);digitalWrite(z1, LOW); delay(1); digitalWrite(z1, HIGH);
+    puerto(display[centenas], l, r);digitalWrite(z2, LOW); delay(1); digitalWrite(z2, HIGH);
+    puerto(display[millares], l, r);digitalWrite(z3, LOW); delay(1); digitalWrite(z3, HIGH);
+}
+}
