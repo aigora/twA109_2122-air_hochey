@@ -1,0 +1,206 @@
+//TRABAJO PROGRAMACIÓN 2022 AIR-HOCKEY
+
+#include<stdio.h>
+#include<stdlib.h>
+#include<locale.h>
+#include<string.h>
+#include<time.h>
+#include"SerialClass.h"
+
+#define N 30
+#define MAX_BUFFER 10
+#define PAUSA_MS 200
+
+typedef struct {
+	char nombre[N];
+	char apellido[N];
+	int edad;
+}Jugador;
+
+void CargarJugador(Jugador* jugadores, int n_jugador);
+void RellenarEstructura(Jugador* j);
+void EscribirFichero(Jugador* jugador, int n_jugadores);
+void LeerFichero(Jugador* jugador, int n_jugadores);
+
+int main(void) {
+
+	setlocale(LC_ALL, "es-ES");
+
+	//variables
+	Serial* Arduino;
+	char puerto[] = "COM4";
+	int opcion;
+	int menu2;
+	int n_jugadores;
+	int bytes;
+	Jugador* v_jugador;
+	int contador1, contador2;
+	char lectura[10] = "\0";
+
+	printf("Se va a proceder al registro de datos de los jugadores: \n");
+	printf("Introduzca el número de jugadores: \n");
+	scanf_s("%d", &n_jugadores);
+	printf("Datos para cada jugador: \n");
+	v_jugador = (Jugador*)calloc(n_jugadores, sizeof(Jugador));
+	if (v_jugador == NULL) {
+		printf("\n Error en la asignacion de memoria: ");
+		free(v_jugador);
+	}
+	else {
+		Arduino = new Serial((char*)puerto);
+		CargarJugador(v_jugador, n_jugadores);
+		EscribirFichero(v_jugador, n_jugadores);
+		//menu ppal
+		do {
+			printf("----------MENU PRINCIPAL----------\n");
+			printf("--> Introduzca una opción: \n");
+			printf("1. NUEVA PARTIDA\n");
+			printf("2. MOSTRAR DATOS DE PARTIDA\n");
+			printf("3. SALIR");
+
+			printf("\nIntroduzca la opción deseada: \n");
+			scanf_s("%d", &opcion);
+
+			switch (opcion) {
+
+			case 1:
+				do {
+					//menu de partidas
+					printf("-----MENU DE PARTIDAS-----\n");
+					printf("Seleccione el modo de juego: \n");
+					printf("1. Al mejor de 3\n");
+					printf("2. Al mejor de 5\n");
+					printf("3. Muerte subita\n");
+					printf("4. Terminar partida\n");
+
+					printf("\nIntroduzca una opcion: \n");
+					scanf_s("%d", &menu2);
+
+					switch (menu2) {
+
+					case 1:
+						//Funcion al mejor de 3
+						contador1 = 0;
+						contador2 = 0;
+						do
+						{
+							Serial* Arduino = new Serial((char*)puerto);
+							while (Arduino->IsConnected())
+							{
+								int n = Arduino->ReadData(lectura, 9);
+								int bytesRecibidos, total = 0;
+								char mensaje_recibido[MAX_BUFFER];
+
+								bytesRecibidos = Arduino->ReadData(mensaje_recibido, sizeof(char) * MAX_BUFFER - 1);
+								while (bytesRecibidos > 0)
+								{
+									Sleep(PAUSA_MS);
+									total += bytesRecibidos;
+									bytesRecibidos = Arduino->ReadData(mensaje_recibido + total, sizeof(char) * MAX_BUFFER - 1);
+								}
+								if (total > 0)
+								{
+									mensaje_recibido[total - 1] = '\0';
+									printf("\nMensaje recibido: %s\n", mensaje_recibido);
+								}
+								mensaje_recibido[0] = lectura[0];
+								bytesRecibidos = n;
+							}
+
+							if (lectura[0] == 'a')
+								contador1++;
+							if (lectura[0] == 'b')
+								contador2++;
+						} while (contador1 < 3 || contador2 < 3);
+						break;
+					case 2:
+						//Funcion al mejor de 5
+						break;
+					case 3:
+						//Muerte súbita
+						break;
+					case 4:
+						printf("Su partida ha finalizado");
+						//Mostrar puntuación
+						break;
+					default:
+						printf("\nIntroduzca una opción válida\n");
+					}
+				} while (menu2 == 1 || menu2 == 2 || menu2 == 3 || menu2 == 4);
+				break;
+			case 2:
+			{
+				LeerFichero(v_jugador, n_jugadores);
+				// funcion que lea el fichero
+			}
+			break;
+			case 3:
+				break;
+			default:
+				printf("Esa opción no esta en el menu\n");
+			}
+		} while (opcion != 3);
+	}
+	return 0;
+}
+void CargarJugador(Jugador* jugadores, int n_jugador) {
+	int i;
+	printf("Se va a proceder a la carga de la estructura de jugador: \n");
+	for (i = 0; i < n_jugador; i++) {
+		RellenarEstructura(&jugadores[i]);
+	}
+	return;
+}
+void RellenarEstructura(Jugador* j) {
+	printf("\nIntroduzca el nombre del jugador: ");
+	getchar();
+	//fgets(j->nombre, N, stdin);
+	gets_s(j->nombre);
+	printf("\nIntroduzca el apellido del jugador: ");
+	//fgets(j->apellido, N, stdin);
+	gets_s(j->apellido);
+	printf("\nIntroduzca la edad del jugador: ");
+	scanf_s("%d", &(j->edad));
+	return;
+}
+void EscribirFichero(Jugador* jugador, int n_jugadores) {
+	FILE* pf_jugador;
+	int i, valor;
+	errno_t e;
+	e = fopen_s(&pf_jugador, "C:/TRABAJOPROGRA/Jugadores.txt", "w+");
+	if (pf_jugador == NULL) {
+		printf("Error al abrir el fichero");
+	}
+	else {
+		rewind(pf_jugador);
+		for (i = 0;i < n_jugadores;i++) {
+			//printf("\nNombre: %s, \nApellido: %s, \nEdad: %d años", (jugador[i].nombre), (jugador[i].apellido), (jugador[i].edad));
+			fprintf(pf_jugador, "%s\n%s\n%d\n", (jugador[i].nombre), (jugador[i].apellido), (jugador[i].edad));
+		}
+		fclose(pf_jugador);
+	}
+	return;
+}
+void LeerFichero(Jugador* jugador, int n_jugadores) {
+	FILE* pf_jugador;
+	int i;
+	char nombre[N];
+	char apellido[N];
+	errno_t e;
+	e = fopen_s(&pf_jugador, "C:/TRABAJOPROGRA/Jugadores.txt", "r");
+	if (pf_jugador == NULL) {
+		printf("Error al abrir el fichero");
+	}
+	else {
+		for (i = 0;i < n_jugadores;i++) {
+			fscanf_s(pf_jugador, "%s\n", &jugador[i].nombre, sizeof(jugador[i].nombre));
+			fscanf_s(pf_jugador, "%s\n", &jugador[i].apellido, sizeof(jugador[i].apellido));
+			fscanf_s(pf_jugador, "%d\n", &jugador[i].edad);
+			//strcpy_s(nombre, (jugador[i].nombre));
+			//strcpy_s(apellido, (jugador[i].apellido));
+			printf("\nNombre: %s, Apellido: %s, Edad: %d años\n", jugador[i].nombre, jugador[i].apellido, (jugador[i].edad));
+		}
+		fclose(pf_jugador);
+	}
+	return;
+}
