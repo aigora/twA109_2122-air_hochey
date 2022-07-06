@@ -1,0 +1,77 @@
+const int EchoPin = 5;
+const int TriggerPin = 6;
+const int LedPin = 9;
+const int EchoPin1 = 10;
+const int TriggerPin1 = 11;
+const int distancia_inicial1 = 7;
+const int distancia_inicial2 = 8;
+char comando='#';
+// comando = '#' bloquea pings ultrasonidos
+// comando = '@' permite pings ultrasonidos
+
+char car;
+
+void setup() {
+ Serial.begin(9600);
+ pinMode(LedPin,OUTPUT);
+ pinMode(TriggerPin,OUTPUT);
+ pinMode(EchoPin,INPUT);
+ pinMode(TriggerPin1,OUTPUT);
+ pinMode(EchoPin1,INPUT);
+}
+
+void loop() {
+ if (Serial.available())
+ {
+    //espera caracter
+    car = Serial.read();
+    if (car == '@' or car == '#') comando=car; 
+ }
+ if (comando=='@')
+ {
+   int cm = ping (TriggerPin,EchoPin);
+   //Serial.println("Distancia_P1: ");
+   //Serial.println(cm);
+   //delay(500);
+   int cm1 = ping1 (TriggerPin1,EchoPin1);
+   //Serial.println("Distancia_P2: ");
+   //Serial.println(cm1);
+   //delay(500);
+
+   if(cm<distancia_inicial1)
+   {
+     Serial.println("A");
+     delay(2000); 
+   }
+    if(cm1<distancia_inicial2)
+   {
+     Serial.println("B");
+     delay(2000);
+   }
+ }
+}
+
+int ping(int TriggerPin,int EchoPin){
+  long duracion, distanceCm;
+  
+  digitalWrite(TriggerPin,LOW);
+  delayMicroseconds(4);
+  digitalWrite(TriggerPin,HIGH);
+  delayMicroseconds(10);
+
+  duracion=pulseIn(EchoPin,HIGH);
+  distanceCm=duracion*10/292/2;
+  return distanceCm;
+}
+int ping1(int TriggerPin1,int EchoPin1){
+  long duracion1, distanceCm1;
+  
+  digitalWrite(TriggerPin1,LOW);
+  delayMicroseconds(4);
+  digitalWrite(TriggerPin1,HIGH);
+  delayMicroseconds(10);
+
+  duracion1=pulseIn(EchoPin1,HIGH);
+  distanceCm1=duracion1*10/292/2;
+  return distanceCm1;
+}
