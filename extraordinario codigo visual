@@ -8,36 +8,233 @@
 #define N 30
 #define MAX_BUFFER 100
 #define PAUSA_MS 200
+#define MAXJUGADORES 50
+
+typedef struct {
+	char nombre[N];
+	char apellido[N];
+	int edad;
+}jugador;
+
+struct persona
+{
+	int id;
+	char nombre[20];
+	char apellidos[20];
+	int años;
+};
+
+Serial* Arduino;
 
 char lectura[10] = "\0";
 char puerto[] = "COM4";
+int opciongeneral;
 
 
-void comprobar_mensajes(Serial* Arduino);
+void imprime_listado_jugadores();
+void imprime_listado_partidos();
+void imprime_ranking();
+void recalcula_orden_ranking();
+int comprobar_mensajes(Serial* Arduino); //devuelve 0 si no hay goles && 1 si gol portería A && 2 si gol en portería B
 void bloquea_ultrasonidos(Serial* Arduino);
 void activa_ultrasonidos(Serial* Arduino);
+void jugar_partida();
+
+void CargarJugador(jugador* jugadores, int n_jugador);
+void RellenarEstructura(jugador* j);
+void EscribirFichero(jugador* jugador, int n_jugadores);
+void LeerFichero(jugador* jugador, int n_jugadores);
+
 
 //Funcion que devuelve porterial que tenga gol
 //Si devuelve 0 no hay gol
 int detecta_gol(char cadena_arduino[]);
 
 int main(void) {
-	Serial* Arduino;
 
 	setlocale(LC_ALL, "es-ES");
 	Arduino = new Serial((char*)puerto);
 
 	activa_ultrasonidos(Arduino);
-	Sleep(5000);
+	Sleep(1000);
 
-	while (true)
+	//Menu Principal
+	do
 	{
-		//activa_ultrasonidos(Arduino);
-		comprobar_mensajes(Arduino);
+		printf(" ------------------------------\n");
+		printf("1. MENU OPCIONES\n");
+		printf(" ------------------------------\n");
+		printf("1. IMPRIME LISTADO JUGADORES\n");
+		printf("2. JUGADORES (EDICION/ALTA/BAJA)\n");
+		printf("3. IMPRIME HISTORICO DE PARTIDOS\n");
+		printf("4. IMPRIME RANKING JUGADORES\n");
+		printf("5. JUGAR\n");
+		printf("6. SALIR\n");
+		printf("\nIntroduzca la opción deseada: \n");
+		scanf_s("%d", &opciongeneral);
+
+		switch (opciongeneral) {
+		case 1: // IMPRIME LISTADO JUGADORES
+		{
+			imprime_listado_jugadores();
+			break;
+		}
+
+		case 2: // JUGADORES (EDICION/ALTA/BAJA)
+		{
+			imprime_listado_jugadores();
+			break;
+		}
+		case 3: // IMPRIME HISTORICO DE PARTIDOS
+		{
+			imprime_listado_partidos();
+			break;
+		}
+		case 4: // IMPRIME RANKING JUGADORES
+		{
+			imprime_ranking();
+			break;
+		}
+		case 5: // JUGAR
+		{
+			printf("\nJUGAR.......\n");
+			jugar_partida();
+			break;
+		}
+		case 6: // SALIR
+		{
+			printf("\nSALIENDO.......\n");
+			return(0);
+		}
+		default: // OPCION INTRODUCIDA INCORRECTA
+		{
+			printf("Opción incorrecta.\n");
+			break;
+		}
+		}
+
+	} while (1);
+
+}
+// ------------------------------------FUNCIONES ------------------------------------
+
+void imprime_listado_jugadores() 
+{
+	FILE* pf_jugador;
+	char display;
+	struct persona* jugadores;
+	errno_t e;
+
+	// Memory allocation for maxjugadores structures
+	jugadores = (struct persona*)malloc(50 * sizeof(struct persona));
+
+	printf("\nLISTADO JUGADORES\n");
+	printf("NOMBRE APELLIDOS EDAD\n");
+	printf("#####################\n");
+
+	e=fopen_s(&pf_jugador, "Jugadores.txt", "r");
+	if (pf_jugador == NULL) 
+	{
+		printf("Error al abrir el fichero");
 	}
+	while (1) {
+		// reading file
+		display = fgetc(pf_jugador);
+		// end of file indicator
+		if (feof(pf_jugador))
+			break;
+		// displaying every characters
+		if (display == ',')
+		{
+			display = ' ';
+		}
+		printf("%c", display);
+	}
+	printf("\n-------------------------------\n");
+	fclose(pf_jugador);
 }
 
-void comprobar_mensajes(Serial* Arduino)
+void imprime_listado_partidos()
+{
+	FILE* pf_partidos;
+	int i;
+	char nombre[N];
+	char apellido[N];
+	char display;
+
+	errno_t e;
+
+	printf("\nPRINTING HISTORICO DE PARTIDOS \n");
+	printf("JUGADOR1 Goles1 JUGADOR2 Goles2\n");
+	printf("###############################\n");
+	e=fopen_s(&pf_partidos,"partidos.txt", "r");
+	if (pf_partidos == NULL) 
+	{
+		printf("Error al abrir el fichero");
+	}
+	while (1) 
+	{
+		// reading file
+		display = fgetc(pf_partidos);
+		// end of file indicator
+		if (feof(pf_partidos))
+			break;
+
+		// displaying every characters
+		if (display == ',')
+		{
+			display = ' ';
+		}
+		printf("%c", display);
+	}
+
+	printf("\n-------------------------------\n");
+	fclose(pf_partidos);
+	return;
+}
+
+
+void imprime_ranking()
+{
+	FILE* pf_partidos;
+	int i;
+	char nombre[N];
+	char apellido[N];
+	char display;
+	
+	errno_t e;
+
+	printf("\n PRINTING RANKING \n");
+	printf("ID NOMBRE APELLIDOS BALANCE\n");
+	printf("########################\n");
+	e= fopen_s(&pf_partidos,"ranking.txt", "r");
+	if (pf_partidos == NULL) {
+		printf("Error al abrir el fichero");
+	}
+	while (1) {
+		// reading file
+		display = fgetc(pf_partidos);
+		// end of file indicator
+		if (feof(pf_partidos))
+			break;
+
+		// displaying every characters
+		if (display == ',')
+		{
+			display = ' ';
+		}
+		printf("%c", display);
+	}
+	printf("\n-------------------------------\n");
+	fclose(pf_partidos);
+	return;
+}
+
+void recalcula_orden_ranking()
+{
+}
+
+int comprobar_mensajes(Serial* Arduino)
 {
 
 	int bytesrecibidos, total = 0;
@@ -95,88 +292,175 @@ int detecta_gol(char cadena_arduino[])
 	printf("Gol porteria: %d\n", n);
 	return n;
 }
+void jugar_partida()
+{
+int opcion;
+int menu2;
+int flag = 0;
+int contador1=0, contador2=0;
+int goles;
+int ganador = 0;
 
+	printf("----------MENU PRINCIPAL----------\n");
+	printf("--> Introduzca una opción: \n");
+	printf("1. NUEVA PARTIDA\n");
+	printf("2. MOSTRAR DATOS DE PARTIDA\n");
+	printf("3. SALIR");
 
-/*
-	//variables
-	int opcion;
-	int menu2;
-	int n_jugadores;
-	Jugador* v_jugador;
-	printf("Se va a proceder al registro de datos de los jugadores: \n");
-	printf("Introduzca el número de jugadores: \n");
-	scanf_s("%d", &n_jugadores);
-	printf("Datos para cada jugador: \n");
-	v_jugador = (Jugador*)calloc(n_jugadores, sizeof(Jugador));
-	if (v_jugador == NULL) {
-		printf("\n Error en la asignacion de memoria: ");
-		free(v_jugador);
-	}
-	else {
-		CargarJugador(v_jugador, n_jugadores);
-		EscribirFichero(v_jugador, n_jugadores);
-		//menu ppal
-		do {
-			printf("----------MENU PRINCIPAL----------\n");
-			printf("--> Introduzca una opción: \n");
-			printf("1. NUEVA PARTIDA\n");
-			printf("2. MOSTRAR DATOS DE PARTIDA\n");
-			printf("3. SALIR");
+	do
+	{
+		printf("\nIntroduzca la opción deseada: \n");
 
-			printf("\nIntroduzca la opción deseada: \n");
-			scanf_s("%d", &opcion);
+		scanf_s("%d", &opcion);
+		switch (opcion)
+		{
+		case 1:
+			do
+			{
+				//menu de partidas
+				printf("-----MENU DE PARTIDAS-----\n");
+				printf("Seleccione el modo de juego: \n");
+				printf("1. Al mejor de 3\n");
+				printf("2. Al mejor de 5\n");
+				printf("3. Muerte subita\n");
+				printf("4. Terminar partida\n");
 
-			switch (opcion) {
+				if (flag == 1)
+				{
+					flag = 0;
+					break;
+				}
 
-			case 1:
-				do {
-					//menu de partidas
-					printf("-----MENU DE PARTIDAS-----\n");
-					printf("Seleccione el modo de juego: \n");
-					printf("1. Al mejor de 3\n");
-					printf("2. Al mejor de 5\n");
-					printf("3. Muerte subita\n");
-					printf("4. Terminar partida\n");
+				printf("\nIntroduzca una opcion: \n");
+				scanf_s("%d", &menu2);
 
-					printf("\nIntroduzca una opcion: \n");
-					scanf_s("%d", &menu2);
-
-					switch (menu2) {
-
+				switch (menu2)
+				{
 					case 1:
+					{
 						//Funcion al mejor de 3
+						printf("\n\n AL MEJOR DE 3\n\n");
+						do
+						{
+							goles = comprobar_mensajes(Arduino);
+							switch (goles)
+							{
+							case 1:	// Gol Portería A
+								{
+									contador1++;
+									printf("\n Valor de Contador1: %d", contador1);
+									break;
+								}
+							case 2: // Gol Portería B
+								{
+									contador2++;
+									printf("\n Valor de Contador2: %d", contador2);
+									break;
+								}
+							default:
+								break;
+							}
+
+						} while (contador1 <= 3 && contador2 <= 3);
+						
+						if (contador1 > contador2)
+						{
+							printf("\nEl ganador es el Jugador 1\n");
+						}
+						else
+						{
+							printf("\nEl ganador es el Jugador 2\n");
+						}
 						break;
+					}
 					case 2:
+					{
 						//Funcion al mejor de 5
+						printf("\n\n AL MEJOR DE 5\n\n");
+						do
+						{
+							goles = comprobar_mensajes(Arduino);
+							switch (goles)
+							{
+							case 1:	// Gol Portería A
+								{
+									contador1++;
+									break;
+								}
+							case 2: // Gol Portería B
+								{
+									contador2++;
+									break;
+								}
+							default:
+								break;
+							}
+
+						} while (contador1 < 5 && contador2 < 5);
+						if (contador1 > contador2) printf("\nEl ganador es el Jugador 1\n");
+							else printf("\nEl ganador es el Jugador 2\n");
 						break;
+					}
 					case 3:
-						//Muerte súbita
+					{
+						do
+						{
+							//Muerte súbita
+							printf("\n\n MUERTE SUBITA\n\n");
+							goles = comprobar_mensajes(Arduino);
+							switch (goles)
+							{
+							case 1:	// Gol Portería A
+							{
+								contador1++;
+								break;
+							}
+
+							case 2: // Gol Portería B
+							{
+								contador2++;
+								break;
+							}
+							default:
+								break;
+							}
+
+						} while (contador1 >= 1 || contador2 >= 1);
+						if (contador1 > contador2) printf("\nEl ganador es el Jugador 1\n");
+							else printf("\nEl ganador es el Jugador 2\n");
 						break;
+					}
 					case 4:
-						printf("Su partida ha finalizado");
-						//Mostrar puntuación
-						break;
+						{
+							printf("Su partida ha finalizado");
+							flag = 1;
+							//Mostrar puntuación
+							break;
+						}
 					default:
 						printf("\nIntroduzca una opción válida\n");
-					}
-				} while (menu2 == 1 || menu2 == 2 || menu2 == 3 || menu2 == 4);
+				}
+			} while (menu2 == 1 || menu2 == 2 || menu2 == 3 || menu2 == 4);
 				break;
-			case 2:
-			{
-				LeerFichero(v_jugador, n_jugadores);
-				// funcion que llame a mostrar puntuaciones
-			}
+		case 2:
+		{
+			//LeerFichero(v_jugador, n_jugadores);
+			// funcion que lea el fichero
+		}
+		break;
+		case 3:
 			break;
-			case 3:
-				break;
-			default:
-				printf("Esa opción no esta en el menu\n");
-			}
-		} while (opcion != 3);
-	}
-	return 0;
+		default:
+			printf("Esa opción no esta en el menu\n");
+			break;
+		}
+	} while (opcion != 3);
 }
-void CargarJugador(Jugador* jugadores, int n_jugador) {
+
+// ----------------------------
+
+void CargarJugador(jugador* jugadores, int n_jugador) 
+{
 	int i;
 	printf("Se va a proceder a la carga de la estructura de jugador: \n");
 	for (i = 0; i < n_jugador; i++) {
@@ -184,7 +468,8 @@ void CargarJugador(Jugador* jugadores, int n_jugador) {
 	}
 	return;
 }
-void RellenarEstructura(Jugador* j) {
+void RellenarEstructura(jugador* j) 
+{
 	printf("\nIntroduzca el nombre del jugador: ");
 	getchar();
 	//fgets(j->nombre, N, stdin);
@@ -196,11 +481,12 @@ void RellenarEstructura(Jugador* j) {
 	scanf_s("%d", &(j->edad));
 	return;
 }
-void EscribirFichero(Jugador* jugador, int n_jugadores) {
+void EscribirFichero(jugador* jugador, int n_jugadores) 
+{
 	FILE* pf_jugador;
 	int i, valor;
 	errno_t e;
-	e = fopen_s(&pf_jugador, "C:/TRABAJOPROGRA/Jugadores.txt", "w+");
+	e = fopen_s(&pf_jugador, "jugadores.txt", "w+");
 	if (pf_jugador == NULL) {
 		printf("Error al abrir el fichero");
 	}
@@ -214,13 +500,14 @@ void EscribirFichero(Jugador* jugador, int n_jugadores) {
 	}
 	return;
 }
-void LeerFichero(Jugador* jugador, int n_jugadores) {
+void LeerFichero(jugador* jugador, int n_jugadores) 
+{
 	FILE* pf_jugador;
-	int i;
+	int i=0;
 	char nombre[N];
 	char apellido[N];
 	errno_t e;
-	e = fopen_s(&pf_jugador, "C:/TRABAJOPROGRA/Jugadores.txt", "r");
+	e = fopen_s(&pf_jugador, "jugadores.txt", "r");
 	if (pf_jugador == NULL) {
 		printf("Error al abrir el fichero");
 	}
@@ -237,4 +524,3 @@ void LeerFichero(Jugador* jugador, int n_jugadores) {
 	}
 	return;
 }
-*/
