@@ -1,0 +1,240 @@
+#include<stdio.h>
+#include<stdlib.h>
+#include<string.h>
+#include<locale.h>
+#include<conio.h>
+#include"SerialClass.h"
+
+#define N 30
+#define MAX_BUFFER 100
+#define PAUSA_MS 200
+
+char lectura[10] = "\0";
+char puerto[] = "COM4";
+
+
+void comprobar_mensajes(Serial* Arduino);
+void bloquea_ultrasonidos(Serial* Arduino);
+void activa_ultrasonidos(Serial* Arduino);
+
+//Funcion que devuelve porterial que tenga gol
+//Si devuelve 0 no hay gol
+int detecta_gol(char cadena_arduino[]);
+
+int main(void) {
+	Serial* Arduino;
+
+	setlocale(LC_ALL, "es-ES");
+	Arduino = new Serial((char*)puerto);
+
+	activa_ultrasonidos(Arduino);
+	Sleep(5000);
+
+	while (true)
+	{
+		//activa_ultrasonidos(Arduino);
+		comprobar_mensajes(Arduino);
+	}
+}
+
+void comprobar_mensajes(Serial* Arduino)
+{
+
+	int bytesrecibidos, total = 0;
+	int gol_porteria=0;
+	char mensaje_recibido[MAX_BUFFER]="";
+
+	bytesrecibidos = Arduino->ReadData(mensaje_recibido, sizeof(mensaje_recibido) - 1);
+	if (bytesrecibidos > 0) 
+
+	gol_porteria = detecta_gol(mensaje_recibido);
+
+	while (bytesrecibidos>0)
+	{
+		Sleep(PAUSA_MS);
+		total += bytesrecibidos;
+		bytesrecibidos = Arduino->ReadData(mensaje_recibido, sizeof(mensaje_recibido) - 1);
+	}
+
+	 if (total > 0)
+	{
+		mensaje_recibido[total - 1] = '\0';
+	}
+}
+
+void bloquea_ultrasonidos(Serial* Arduino)
+{
+	int bytesenviados;
+	char bloqueo = '#';
+	bytesenviados = Arduino->WriteData(&bloqueo, sizeof(char));
+}
+
+void activa_ultrasonidos(Serial* Arduino)
+{
+	int bytesenviados;
+	char activa = '@';
+	bytesenviados = Arduino->WriteData(&activa, sizeof(char));
+}
+
+int detecta_gol(char cadena_arduino[])
+{
+	int n=0;
+
+	// Gol portería A
+	if (cadena_arduino[0] == 'A')
+	{
+		n = 1;
+	}
+
+	// Gol portería B
+	if (cadena_arduino[0] == 'B')
+	{
+		n = 2;
+	}
+
+	printf("Gol porteria: %d\n", n);
+	return n;
+}
+
+
+/*
+	//variables
+	int opcion;
+	int menu2;
+	int n_jugadores;
+	Jugador* v_jugador;
+	printf("Se va a proceder al registro de datos de los jugadores: \n");
+	printf("Introduzca el número de jugadores: \n");
+	scanf_s("%d", &n_jugadores);
+	printf("Datos para cada jugador: \n");
+	v_jugador = (Jugador*)calloc(n_jugadores, sizeof(Jugador));
+	if (v_jugador == NULL) {
+		printf("\n Error en la asignacion de memoria: ");
+		free(v_jugador);
+	}
+	else {
+		CargarJugador(v_jugador, n_jugadores);
+		EscribirFichero(v_jugador, n_jugadores);
+		//menu ppal
+		do {
+			printf("----------MENU PRINCIPAL----------\n");
+			printf("--> Introduzca una opción: \n");
+			printf("1. NUEVA PARTIDA\n");
+			printf("2. MOSTRAR DATOS DE PARTIDA\n");
+			printf("3. SALIR");
+
+			printf("\nIntroduzca la opción deseada: \n");
+			scanf_s("%d", &opcion);
+
+			switch (opcion) {
+
+			case 1:
+				do {
+					//menu de partidas
+					printf("-----MENU DE PARTIDAS-----\n");
+					printf("Seleccione el modo de juego: \n");
+					printf("1. Al mejor de 3\n");
+					printf("2. Al mejor de 5\n");
+					printf("3. Muerte subita\n");
+					printf("4. Terminar partida\n");
+
+					printf("\nIntroduzca una opcion: \n");
+					scanf_s("%d", &menu2);
+
+					switch (menu2) {
+
+					case 1:
+						//Funcion al mejor de 3
+						break;
+					case 2:
+						//Funcion al mejor de 5
+						break;
+					case 3:
+						//Muerte súbita
+						break;
+					case 4:
+						printf("Su partida ha finalizado");
+						//Mostrar puntuación
+						break;
+					default:
+						printf("\nIntroduzca una opción válida\n");
+					}
+				} while (menu2 == 1 || menu2 == 2 || menu2 == 3 || menu2 == 4);
+				break;
+			case 2:
+			{
+				LeerFichero(v_jugador, n_jugadores);
+				// funcion que llame a mostrar puntuaciones
+			}
+			break;
+			case 3:
+				break;
+			default:
+				printf("Esa opción no esta en el menu\n");
+			}
+		} while (opcion != 3);
+	}
+	return 0;
+}
+void CargarJugador(Jugador* jugadores, int n_jugador) {
+	int i;
+	printf("Se va a proceder a la carga de la estructura de jugador: \n");
+	for (i = 0; i < n_jugador; i++) {
+		RellenarEstructura(&jugadores[i]);
+	}
+	return;
+}
+void RellenarEstructura(Jugador* j) {
+	printf("\nIntroduzca el nombre del jugador: ");
+	getchar();
+	//fgets(j->nombre, N, stdin);
+	gets_s(j->nombre);
+	printf("\nIntroduzca el apellido del jugador: ");
+	//fgets(j->apellido, N, stdin);
+	gets_s(j->apellido);
+	printf("\nIntroduzca la edad del jugador: ");
+	scanf_s("%d", &(j->edad));
+	return;
+}
+void EscribirFichero(Jugador* jugador, int n_jugadores) {
+	FILE* pf_jugador;
+	int i, valor;
+	errno_t e;
+	e = fopen_s(&pf_jugador, "C:/TRABAJOPROGRA/Jugadores.txt", "w+");
+	if (pf_jugador == NULL) {
+		printf("Error al abrir el fichero");
+	}
+	else {
+		rewind(pf_jugador);
+		for (i = 0;i < n_jugadores;i++) {
+			//printf("\nNombre: %s, \nApellido: %s, \nEdad: %d años", (jugador[i].nombre), (jugador[i].apellido), (jugador[i].edad));
+			fprintf(pf_jugador, "%s\n%s\n%d\n", (jugador[i].nombre), (jugador[i].apellido), (jugador[i].edad));
+		}
+		fclose(pf_jugador);
+	}
+	return;
+}
+void LeerFichero(Jugador* jugador, int n_jugadores) {
+	FILE* pf_jugador;
+	int i;
+	char nombre[N];
+	char apellido[N];
+	errno_t e;
+	e = fopen_s(&pf_jugador, "C:/TRABAJOPROGRA/Jugadores.txt", "r");
+	if (pf_jugador == NULL) {
+		printf("Error al abrir el fichero");
+	}
+	else {
+		for (i = 0;i < n_jugadores;i++) {
+			fscanf_s(pf_jugador, "%s\n", &jugador[i].nombre, sizeof(jugador[i].nombre));
+			fscanf_s(pf_jugador, "%s\n", &jugador[i].apellido, sizeof(jugador[i].apellido));
+			fscanf_s(pf_jugador, "%d\n", &jugador[i].edad);
+			//strcpy_s(nombre, (jugador[i].nombre));
+			//strcpy_s(apellido, (jugador[i].apellido));
+			printf("\nNombre: %s, Apellido: %s, Edad: %d años\n", jugador[i].nombre, jugador[i].apellido, (jugador[i].edad));
+		}
+		fclose(pf_jugador);
+	}
+	return;
+}
+*/
